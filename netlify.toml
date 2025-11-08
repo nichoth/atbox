@@ -24,7 +24,7 @@
   node_bundler = "esbuild"
 
 [build]
-  command = "npm ci --ignore-scripts && npm run build"
+  command = "npm run build"
   functions = "netlify/functions"
   publish = "public"
 
