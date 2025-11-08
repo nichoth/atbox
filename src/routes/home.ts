@@ -105,6 +105,7 @@ export const HomeRoute:FunctionComponent<{
                     Add new strings to the <code>alsoKnownAs</code> field
                     in the DID record.
                 </p>
+
                 <form class="aka" onSubmit=${aka} onInput=${akaInput}>
                     <label for="handle">Your handle</label>
                     <input

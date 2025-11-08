@@ -1,3 +1,9 @@
+:root {
+    --primary-accent: #0ef;
+    /* --primary-accent: #00aeef; */
+    /* --primary-accent: #00c3ff; */
+}
+
 h1 {
     margin-bottom: 1rem;
     border-bottom: 2px solid;
@@ -10,9 +16,15 @@ p {
 input {
     border-radius: 0;
     border: 1px solid;
-    outline: none;
     padding: 0.4rem;
     font-size: 1rem;
+    transition: all 0.2s;
+    outline: 2px solid transparent;
+
+    &:focus {
+        outline-color: var(--primary-accent);
+        border-color: var(--primary-accent);
+    }
 }
 
 code {
@@ -125,30 +137,6 @@ form.aka {
             margin-top: 0.25rem;
             color: #999;
             font-size: 0.9rem;
-        }
-    }
-
-    & .button-outline {
-        display: inline-block;
-        padding: 0.75rem 1.5rem;
-        margin-right: 1rem;
-        margin-bottom: 1rem;
-        border: 2px solid #333;
-        background: white;
-        color: #333;
-        text-decoration: none;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.2s;
-
-        &:hover:not(:disabled) {
-            background: #333;
-            color: white;
-        }
-
-        &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
     }
 
