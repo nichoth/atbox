@@ -16,8 +16,11 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
+    "@atproto/api": "^0.18.0",
     "@nichoth/components": "^0.16.16",
     "@preact/signals": "^2.4.0",
+    "@substrate-system/a11y": "^0.0.15",
+    "@substrate-system/css-normalize": "^0.0.13",
     "@substrate-system/routes": "^5.0.2",
     "htm": "^3.1.1",
     "ky": "^1.7.5",
@@ -25,7 +28,9 @@
     "route-event": "^7.1.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
     "@netlify/functions": "^5.0.1",
+    "@playwright/test": "^1.56.1",
     "@preact/preset-vite": "^2.9.4",
     "@substrate-system/debug": "^0.9.30",
     "@substrate-system/tapzero": "^0.10.15",
