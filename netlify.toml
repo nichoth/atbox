@@ -25,6 +25,9 @@
 
 [build]
   command = "npm run build"
-  environment = { NODE_VERSION = '22' }
   functions = "netlify/functions"
   publish = "public"
+
+[build.environment]
+  NODE_VERSION = '22' 
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
