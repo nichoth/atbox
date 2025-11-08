@@ -4,6 +4,8 @@ import { createDebug } from '@substrate-system/debug'
 import { State } from './state.js'
 import Router from './routes/index.js'
 import '@nichoth/components/button-outline.css'
+import '@substrate-system/css-normalize'
+import '@substrate-system/a11y'
 import './style.css'
 
 const state = State()
