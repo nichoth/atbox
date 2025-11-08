@@ -24,10 +24,11 @@
   node_bundler = "esbuild"
 
 [build]
-  command = "npm run build"
+  command = "npm ci --ignore-scripts && npm run build"
   functions = "netlify/functions"
   publish = "public"
 
 [build.environment]
-  NODE_VERSION = '22' 
+  NODE_VERSION = '22'
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = '1'
+  PLAYWRIGHT_SKIP_BROWSER_GC = '1'
