@@ -120,6 +120,7 @@ State.fetchDid = async function (
 State.setAka = async function (
     state:ReturnType<typeof State>,
     handleOrDid:string,
+    newUrl:string,
     pds?:string
 ):Promise<void> {
     const clientId = location.origin + '/client-metadata.json'
@@ -172,8 +173,7 @@ State.setAka = async function (
                 state: 'setting-aka',
                 // Remove 'prompt: none' to allow user interaction
             })
-            // After signIn, the page will redirect, so code below won't execute
-            return
+            return  // Page will redirect
         } catch (err) {
             throw new Error('Authentication failed: ' + err)
         }
@@ -182,43 +182,27 @@ State.setAka = async function (
     // Create Agent with the OAuth session
     const agent = new Agent(session)
 
-    // Update the alsoKnownAs field
     try {
-        // Get current profile record
-        const profileRecord = await agent.com.atproto.repo.getRecord({
-            repo: agent.assertDid,
-            collection: 'app.bsky.actor.profile',
-            rkey: 'self',
+        // Get current DID document to preserve existing data
+        const didDoc:DidDocument = await ky.get(
+            `https://plc.directory/${agent.assertDid}`).json()
+
+        // Sign a PLC operation to update alsoKnownAs
+        const signedOpResponse = await agent.com.atproto.identity.signPlcOperation({
+            ...didDoc,
+            alsoKnownAs: [
+                ...(didDoc.alsoKnownAs || []),  // Keep existing entries
+                newUrl,  // Add new URL
+            ],
         })
 
-        // Update with alsoKnownAs
-        // To update alsoKnownAs in your DID document
-        try {
-            // Sign a PLC operation to update the DID document
-            const plcOp = await agent.com.atproto.identity.signPlcOperation({
-                // This creates a signed operation to update your DID document
-                alsoKnownAs: [`at://${handleOrDid}`],
-                // You may need to include other required fields like:
-                // - verificationMethods
-                // - services
-                // - rotationKeys
-            })
+        // Submit the signed operation
+        // The response has the structure { operation: <signed operation object> }
+        await agent.com.atproto.identity.submitPlcOperation(signedOpResponse.data)
 
-            // Submit the signed operation
-            await agent.com.atproto.identity.submitPlcOperation({
-                operation: plcOp.operation
-            })
-        } catch (err) {
-            console.error('Failed to update alsoKnownAs:', err)
-            throw err
-        }
-
-        // Fetch and return updated DID document
-        // const updatedDoc = await agent.com.atproto.identity.resolveHandle({
-        //     handle: handleOrDid
-        // })
+        debug('DID document updated successfully')
     } catch (err) {
-        console.error('Failed to update alsoKnownAs:', err)
+        debug('Update failed...', err)
         throw err
     }
 }
