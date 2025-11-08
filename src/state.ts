@@ -190,10 +190,10 @@ State.setAka = async function (
         // Sign a PLC operation to update alsoKnownAs
         const signedOpResponse = await agent.com.atproto.identity.signPlcOperation({
             ...didDoc,
-            alsoKnownAs: [
+            alsoKnownAs: Array.from(new Set([  // deduplicate
                 ...(didDoc.alsoKnownAs || []),  // Keep existing entries
                 newUrl,  // Add new URL
-            ],
+            ])),
         })
 
         // Submit the signed operation

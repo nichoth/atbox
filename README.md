@@ -1,26 +1,51 @@
 # AT Protocol Tools
 
-A web interface for managing your AT Protocol DID and identity. This site provides user-friendly access to the features from the [@substrate-system/at](https://github.com/substrate-system/at) CLI tool.
+GUI for DIDs.
 
-## Features
+<details><summary><h2>Contents</h2></summary>
+
+<!-- toc -->
+
+- [Featuring](#featuring)
+  * [DID Lookup](#did-lookup)
+  * [Update `alsoKnownAs`](#update-alsoknownas)
+- [How It Works](#how-it-works)
+- [Develop](#develop)
+- [Etc](#etc)
+
+<!-- tocstop -->
+
+</details>
+
+## Featuring
 
 ### DID Lookup
-Fetch and view the DID document for any AT Protocol handle or DID string. See:
-- `alsoKnownAs` entries
-- Verification methods
-- Service endpoints (like PDS servers)
 
-### Update alsoKnownAs
-Link external identities to your Bluesky DID document. Add URLs like:
-- GitHub profiles
-- Personal websites
-- Other platforms
+Fetch the DID record by handle or DID string. Displays The DID document as JSON.
+
+-----
+
+### Update `alsoKnownAs`
+
+Add records to the `alsoKnownAs` field in the DID record. This is useful for
+things like [@ngerakines.me](https://bsky.app/profile/ngerakines.me)'s nice
+tools [atwork.place](https://atwork.place/) and
+[Weather Vane](https://verify.aviary.domains/), another site where you
+can lookup a DID record and check cryptographic signatures.
+
+* GitHub profiles
+* Personal websites
+* Other platforms
+
 
 ## How It Works
 
-All API calls are made directly from the browser using the [@atproto/api](https://www.npmjs.com/package/@atproto/api) client library. No server-side processing is required - your credentials are sent directly to your PDS and never stored.
+API calls are made directly from the browser to the pds using the
+[@atproto/api](https://www.npmjs.com/package/@atproto/api) client library.
 
-## Development
+## Develop
+
+Start a local dev server.
 
 ```bash
 # Install dependencies
@@ -33,21 +58,8 @@ npm start
 npm run build
 ```
 
-The dev server runs on port 8888 (Vite) with Netlify Functions on port 9999.
+## Etc
 
-## Tech Stack
-
-- **Framework**: Preact with htm
-- **State Management**: @preact/signals
-- **Routing**: @substrate-system/routes
-- **AT Protocol**: @atproto/api
-- **Build Tool**: Vite
-- **Styling**: CSS with nesting
-
-## About
-
-This project provides a web interface for the [AT Protocol CLI tool](https://github.com/substrate-system/at), making it easier to interact with AT Protocol DID documents without using the command line.
-
-## License
-
-SEE LICENSE IN LICENSE
+- **Framework**: Preact with `htm`
+- **State Management**: `@preact/signals`
+- **AT Protocol**: `@atproto/api`
