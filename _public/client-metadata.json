@@ -1,0 +1,15 @@
+{
+    "client_id":  "https://atbox.dev/client-metadata.json",
+    "client_name": "At Box",
+    "client_uri": "https://atbox.dev",
+    "logo_uri": "https://atbox.dev/logo.png",
+    "tos_uri": "https://atbox.dev/tos",
+    "policy_uri": "https://atbox.dev/policy",
+    "redirect_uris": ["https://atbox.dev/callback"],
+    "scope": "atproto",
+    "grant_types": ["authorization_code", "refresh_token"],
+    "response_types": ["code"],
+    "token_endpoint_auth_method": "none",
+    "application_type": "web",
+    "dpop_bound_access_tokens": true
+}

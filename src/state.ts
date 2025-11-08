@@ -1,8 +1,14 @@
 import { Signal, signal } from '@preact/signals'
 import Route from 'route-event'
-import { AtpAgent } from '@atproto/api'
+import { AtpAgent, Agent } from '@atproto/api'
 import ky from 'ky'
-import { type DidDocument } from '@atproto/oauth-client-browser'
+import {
+    BrowserOAuthClient,
+    type OAuthSession,
+    type DidDocument
+} from '@atproto/oauth-client-browser'
+import Debug from '@substrate-system/debug'
+const debug = Debug(import.meta.env.DEV)
 
 /**
  * Setup state
@@ -111,6 +117,108 @@ State.fetchDid = async function (
     return didDoc
 }
 
-State.setAka = async function () {
+State.setAka = async function (
+    state:ReturnType<typeof State>,
+    handleOrDid:string,
+    pds?:string
+):Promise<void> {
+    const clientId = location.origin + '/client-metadata.json'
 
+    const client = new BrowserOAuthClient({
+        handleResolver: pds || state._pds,
+        clientMetadata: {
+            // Must be the same URL as the one used to obtain this JSON object
+            // client_id: 'https://my-app.com/client-metadata.json',
+            client_id: clientId,
+            client_name: 'At Box',
+            client_uri: 'https://atbox.dev',
+            logo_uri: 'https://atbox.dev/logo.png',
+            tos_uri: 'https://atbox.dev/tos',
+            policy_uri: 'https://atbox.dev/policy',
+            redirect_uris: ['https://atbox.dev/callback'],
+            scope: 'atproto',
+            grant_types: ['authorization_code', 'refresh_token'],
+            response_types: ['code'],
+            token_endpoint_auth_method: 'none',
+            application_type: 'web',
+            dpop_bound_access_tokens: true
+        },
+    })
+
+    // Initialize and check for existing session
+    const result:undefined|{
+        session:OAuthSession;
+        state?:string|null
+    } = await client.init()
+
+    let session:OAuthSession
+
+    if (result) {
+        session = result.session
+        debug(`${session.sub} was restored`)
+
+        const { state } = result
+        if (state) {
+            debug(
+                `${session.sub} was successfully authenticated (state: ${state})`,
+            )
+        } else {
+            debug(`${session.sub} was restored (last active session)`)
+        }
+    } else {
+        // No existing session, need to sign in
+        try {
+            await client.signIn(handleOrDid, {
+                state: 'setting-aka',
+                // Remove 'prompt: none' to allow user interaction
+            })
+            // After signIn, the page will redirect, so code below won't execute
+            return
+        } catch (err) {
+            throw new Error('Authentication failed: ' + err)
+        }
+    }
+
+    // Create Agent with the OAuth session
+    const agent = new Agent(session)
+
+    // Update the alsoKnownAs field
+    try {
+        // Get current profile record
+        const profileRecord = await agent.com.atproto.repo.getRecord({
+            repo: agent.assertDid,
+            collection: 'app.bsky.actor.profile',
+            rkey: 'self',
+        })
+
+        // Update with alsoKnownAs
+        // To update alsoKnownAs in your DID document
+        try {
+            // Sign a PLC operation to update the DID document
+            const plcOp = await agent.com.atproto.identity.signPlcOperation({
+                // This creates a signed operation to update your DID document
+                alsoKnownAs: [`at://${handleOrDid}`],
+                // You may need to include other required fields like:
+                // - verificationMethods
+                // - services
+                // - rotationKeys
+            })
+
+            // Submit the signed operation
+            await agent.com.atproto.identity.submitPlcOperation({
+                operation: plcOp.operation
+            })
+        } catch (err) {
+            console.error('Failed to update alsoKnownAs:', err)
+            throw err
+        }
+
+        // Fetch and return updated DID document
+        // const updatedDoc = await agent.com.atproto.identity.resolveHandle({
+        //     handle: handleOrDid
+        // })
+    } catch (err) {
+        console.error('Failed to update alsoKnownAs:', err)
+        throw err
+    }
 }

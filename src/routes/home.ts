@@ -1,22 +1,30 @@
 import { html } from 'htm/preact'
 import { useCallback } from 'preact/hooks'
 import { FunctionComponent } from 'preact'
-import { Button } from '../components/button.js'
 import { useSignal } from '@preact/signals'
 import Debug from '@substrate-system/debug'
+import { Button } from '../components/button.js'
+import { State } from '../state.js'
 const debug = Debug(import.meta.env.DEV)
 
-export const HomeRoute:FunctionComponent = function HomeRoute () {
+export const HomeRoute:FunctionComponent<{
+    state:ReturnType<typeof State>
+}> = function HomeRoute ({ state }) {
     const pendingInput = useSignal<null|string>(null)
-    const fetchDid = useCallback((ev:SubmitEvent) => {
+    const isResolving = useSignal<boolean>(false)
+
+    const fetchDid = useCallback(async (ev:SubmitEvent) => {
         ev.preventDefault()
+        if (!pendingInput.value) return
         debug('fetch did')
+        isResolving.value = true
+        await State.fetchDid(state, pendingInput.value)
+        isResolving.value = false
     }, [])
 
     const input = useCallback((ev:InputEvent) => {
         const input = ev.target as HTMLInputElement
         const value = input.value
-        debug('input', value)
         pendingInput.value = value
     }, [])
 
@@ -35,10 +43,11 @@ export const HomeRoute:FunctionComponent = function HomeRoute () {
                 </p>
 
                 <form onSubmit=${fetchDid}>
-                    <input type="text" onInput=${input} />
+                    <input name="did" id="did" type="text" onInput=${input} />
 
                     <div class="controls">
                         <${Button}
+                            isSpinning=${isResolving}
                             type="submit"
                             disabled=${!pendingInput.value}
                         >
@@ -46,10 +55,17 @@ export const HomeRoute:FunctionComponent = function HomeRoute () {
                         <//>
                     </div>
                 </form>
+
+                ${state.didLookup.didDoc.value ?
+                    html`<pre class="${['did', isResolving.value ? 'resolving' : ''].filter(Boolean).join(' ')}">
+                        ${JSON.stringify(state.didLookup.didDoc.value, null, 2)}
+                    </pre>` :
+                    null
+                }
             </div>
 
             <div class="feature-card">
-                <h2>Update alsoKnownAs</h2>
+                <h2><code>alsoKnownAs</code></h2>
                 <p>
                     Link external identities to your Bluesky DID document.
                     Add URLs like GitHub profiles, personal websites, or other platforms.

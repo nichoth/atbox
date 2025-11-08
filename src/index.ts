@@ -9,7 +9,7 @@ import '@substrate-system/a11y'
 import './style.css'
 
 const state = State()
-const router = Router(state)
+const router = Router()
 const debug = createDebug(import.meta.env.DEV)
 
 if (import.meta.env.DEV || import.meta.env.MODE === 'staging') {
@@ -33,9 +33,9 @@ export const App:FunctionComponent = function App () {
 
     return html`<div class="app">
         <main>
-            <${ChildNode} />
+            <${ChildNode} state=${state} />
         </main>
     </div>`
 }
 
-render(html`<${App} />`, document.getElementById('root')!)
+render(html`<${App} state=${state} />`, document.getElementById('root')!)
