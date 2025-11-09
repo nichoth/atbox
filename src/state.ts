@@ -129,6 +129,8 @@ State.setAka = async function (
 
     const clientId = `${origin}/client-metadata.json`
 
+    console.log('**client id**', clientId)
+
     const client = new BrowserOAuthClient({
         handleResolver: pds || state._pds,
         clientMetadata: {
