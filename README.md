@@ -66,6 +66,16 @@ After the oauth part, they will forward you to a URL like this:
 https://atbox.dev/callback#state=GKXFyh...&iss=https%3A%2F%2Fbsky.social&code=cod-e627b3f8...
 ```
 
+### Local OAuth
+
+#### Generate a self-signed certificate
+
+```
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+```
+
+-------
+
 ## Etc
 
 - **Framework**: Preact with `htm`

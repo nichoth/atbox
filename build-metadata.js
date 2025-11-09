@@ -3,9 +3,12 @@ import 'dotenv/config'
 import { writeFileSync } from 'fs'
 import { join } from 'path'
 
-const origin = (process.env.NODE_ENV === 'development' || process.env.DEV) ?
-    'http://127.0.0.1' :
-    'https://atbox.dev'
+// Use NGROK_URL environment variable for local development
+// Otherwise use production URL
+const origin = process.env.NGROK_URL ||
+    ((process.env.NODE_ENV === 'development' || process.env.DEV) ?
+        'https://amalia-indeclinable-gaye.ngrok-free.dev' :
+        'https://atbox.dev')
 
 const clientId = `${origin}/client-metadata.json`
 

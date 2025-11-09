@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import fs from 'node:fs'
 import preact from '@preact/preset-vite'
 import postcssNesting from 'postcss-nesting'
 import cssnanoPlugin from 'cssnano'
@@ -31,8 +32,12 @@ export default defineConfig({
         },
     },
     server: {
+        https: {
+            key: fs.readFileSync('./key.pem'),
+            cert: fs.readFileSync('./cert.pem')
+        },
         port: 8888,
-        host: true,
+        host: 'atbox.test',
         open: true,
         proxy: {
             '/api': {

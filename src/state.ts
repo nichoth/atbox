@@ -123,7 +123,10 @@ State.setAka = async function (
     newUrl:string,
     pds?:string
 ):Promise<void> {
-    const origin = import.meta.env.DEV ? 'http://127.0.0.1' : location.origin
+    const origin = import.meta.env.DEV ?
+        'https://amalia-indeclinable-gaye.ngrok-free.dev' :
+        location.origin
+
     const clientId = `${origin}/client-metadata.json`
 
     const client = new BrowserOAuthClient({
@@ -168,12 +171,21 @@ State.setAka = async function (
     } else {
         // No existing session, need to sign in
         try {
-            await client.signIn(handleOrDid, {
+            // Strip '@' prefix if present
+            const cleanHandle = handleOrDid.startsWith('@') ?
+                handleOrDid.slice(1) :
+                handleOrDid
+
+            debug('Attempting to sign in with handle:', cleanHandle)
+            debug('Handle resolver:', pds || state._pds)
+            debug('Origin:', origin)
+            await client.signIn(cleanHandle, {
                 state: 'setting-aka',
-                // Remove 'prompt: none' to allow user interaction
             })
             return  // Page will redirect
         } catch (err) {
+            debug('Sign in failed:', err)
+            console.error('Full error:', err)
             throw new Error('Authentication failed: ' + err)
         }
     }
