@@ -34,6 +34,7 @@ form.oauth {
 .success {
     border: 2px solid var(--success-border);
     background-color: var(--success-bg);
+    padding: 1rem;
 
     & .status-text {
         color: var(--success-color);

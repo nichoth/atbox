@@ -33,7 +33,7 @@ export function State (pds = 'https://bsky.social'):{
         step:Signal<'form'|'email-code'|'success'>;
         loading:Signal<boolean>;
         error:Signal<string|null>;
-        agent:Signal<AtpAgent|null>;
+        agent:Signal<Agent|null>;
     };
 } {  // eslint-disable-line indent
     const onRoute = Route()
@@ -142,7 +142,7 @@ State.oauthLogin = async function (
             tos_uri: `${origin}/tos`,
             policy_uri: `${origin}/policy`,
             redirect_uris: [`${origin}/callback`],
-            scope: 'atproto transition:generic identity:*',
+            scope: 'atproto transition:generic',
             grant_types: ['authorization_code', 'refresh_token'],
             response_types: ['code'],
             token_endpoint_auth_method: 'none',
@@ -197,124 +197,96 @@ State.oauthLogin = async function (
 State.setAka = async function (
     state:ReturnType<typeof State>,
     handleOrDid:string,
-    newText:string,
-    pds?:string
+    password:string,
+    newText:string
 ):Promise<void> {
-    let session:OAuthSession
+    state.akaUpdate.loading.value = true
+    state.akaUpdate.error.value = null
 
-    // Check if we already have an active OAuth session
-    if (state.oauth.value) {
-        debug('Using existing OAuth session:', state.oauth.value.sub)
-        session = state.oauth.value
-    } else {
-        // No existing session, need to initiate OAuth flow
-        const origin = import.meta.env.DEV ?
-            'https://amalia-indeclinable-gaye.ngrok-free.dev' :
-            location.origin
-
-        const clientId = `${origin}/client-metadata.json`
-
-        debug('**client id**', clientId)
-
-        const client = new BrowserOAuthClient({
-            handleResolver: pds || state._pds,
-            clientMetadata: {
-                client_id: clientId,
-                client_name: 'At Box',
-                client_uri: origin,
-                logo_uri: `${origin}/logo.png`,
-                tos_uri: `${origin}/tos`,
-                policy_uri: `${origin}/policy`,
-                redirect_uris: [`${origin}/callback`],
-                scope: 'atproto transition:generic identity:*',
-                grant_types: ['authorization_code', 'refresh_token'],
-                response_types: ['code'],
-                token_endpoint_auth_method: 'none',
-                application_type: 'web',
-                dpop_bound_access_tokens: true
-            },
-        })
-
-        // Initialize and check for existing session
-        const result:undefined|{
-            session:OAuthSession;
-            state?:string|null
-        } = await client.init()
-
-        if (result) {
-            // session exists
-            session = result.session
-            state.oauth.value = session
-            debug(`${session.sub} was restored`)
-
-            const { state: oauthState } = result
-            if (oauthState) {
-                debug(
-                    `${session.sub} was successfully authenticated ` +
-                        `(state: ${oauthState})`,
-                )
-            } else {
-                debug(`${session.sub} was restored (last active session)`)
-            }
-        } else {
-            // No existing session, need to sign in
-            // Store the pending update in localStorage
-            localStorage.setItem('pending-aka-update', JSON.stringify({ newText }))
-
-            try {
-                // Strip '@' prefix if present
-                const cleanHandle = handleOrDid.startsWith('@') ?
-                    handleOrDid.slice(1) :
-                    handleOrDid
-
-                debug('Attempting to sign in with handle:', cleanHandle)
-                debug('Handle resolver:', pds || state._pds)
-                debug('Origin:', origin)
-                await client.signIn(cleanHandle, {
-                    state: 'setting-aka',
-                })
-                return  // Page will redirect
-            } catch (err) {
-                debug('Sign in failed:', err)
-                console.error('Full error:', err)
-                throw new Error('Authentication failed: ' + err)
-            }
-        }
-    }
-
-    // Create Agent with the OAuth session
-    const agent = new Agent(session)
+    const cleanHandle = handleOrDid.startsWith('@') ?
+        handleOrDid.slice(1) :
+        handleOrDid
 
     let newUrls:string[]
     try {
         newUrls = JSON.parse(newText)
     } catch (err) {
         debug('invalid JSON...', err)
-        debug('invalid JSON...', newText)
+        state.akaUpdate.error.value = 'Invalid JSON format'
+        state.akaUpdate.loading.value = false
         throw err
     }
 
     try {
-        // Get current DID document to preserve existing data
-        const didDoc:DidDocument = await ky.get(
-            `https://plc.directory/${agent.assertDid}`).json()
+        // Login with handle and password
+        const atpAgent = new AtpAgent({ service: state._pds })
+        await atpAgent.login({ identifier: cleanHandle, password })
 
-        // Sign a PLC operation to update alsoKnownAs
-        const signedOpResponse = await agent.com.atproto.identity.signPlcOperation({
+        debug('Logged in as:', atpAgent.session?.did)
+
+        // Store the AtpAgent (NOT Agent) and URLs for later use
+        // We need to keep the AtpAgent because it has the authenticated session
+        state.akaUpdate.agent.value = atpAgent as any
+        state.akaUpdate.url.value = JSON.stringify(newUrls)
+
+        // Request email confirmation
+        await atpAgent.com.atproto.identity.requestPlcOperationSignature()
+        debug('Email confirmation requested')
+
+        // Move to email confirmation step
+        state.akaUpdate.step.value = 'email-code'
+        state.akaUpdate.loading.value = false
+    } catch (err) {
+        debug('Failed to request email confirmation:', err)
+        state.akaUpdate.error.value = (err as Error).message || 'Failed to authenticate or request confirmation'
+        state.akaUpdate.loading.value = false
+        throw err
+    }
+}
+
+/**
+ * Complete the AKA update with email confirmation code
+ */
+State.confirmAkaUpdate = async function (
+    state:ReturnType<typeof State>,
+    emailCode:string
+):Promise<void> {
+    state.akaUpdate.loading.value = true
+    state.akaUpdate.error.value = null
+
+    const atpAgent = state.akaUpdate.agent.value as any as AtpAgent
+    if (!atpAgent || !atpAgent.session) {
+        state.akaUpdate.error.value = 'No active session'
+        state.akaUpdate.loading.value = false
+        throw new Error('No active session')
+    }
+
+    try {
+        // Parse the URLs
+        const newUrls:string[] = JSON.parse(state.akaUpdate.url.value)
+
+        // Get current DID document
+        const didDoc:DidDocument = await ky.get(
+            `https://plc.directory/${atpAgent.session.did}`
+        ).json()
+
+        // Sign the PLC operation with email token
+        const signedOpResponse = await atpAgent.com.atproto.identity.signPlcOperation({
+            token: emailCode,
             ...didDoc,
-            // do not merge the alsoKnownAs array
-            // this is a destructive update
-            alsoKnownAs: Array.from(new Set(newUrls)),  // deduplicate
+            alsoKnownAs: Array.from(new Set(newUrls))  // deduplicate
         })
 
         // Submit the signed operation
-        // The response has the structure
-        // { operation: <signed operation object> }
-        await agent.com.atproto.identity.submitPlcOperation(signedOpResponse.data)
+        await atpAgent.com.atproto.identity.submitPlcOperation(signedOpResponse.data)
 
         debug('DID document updated successfully')
+        state.akaUpdate.step.value = 'success'
+        state.akaUpdate.loading.value = false
     } catch (err) {
-        debug('Update failed...', err)
+        debug('Failed to update DID document:', err)
+        state.akaUpdate.error.value = (err as Error).message || 'Failed to update'
+        state.akaUpdate.loading.value = false
         throw err
     }
 }
@@ -339,7 +311,7 @@ State.checkSession = async function (state:ReturnType<typeof State>):Promise<voi
             tos_uri: `${origin}/tos`,
             policy_uri: `${origin}/policy`,
             redirect_uris: [`${origin}/callback`],
-            scope: 'atproto transition:generic identity:*',
+            scope: 'atproto transition:generic',
             grant_types: ['authorization_code', 'refresh_token'],
             response_types: ['code'],
             token_endpoint_auth_method: 'none',
@@ -382,7 +354,7 @@ State.logout = async function (state:ReturnType<typeof State>):Promise<void> {
             tos_uri: `${origin}/tos`,
             policy_uri: `${origin}/policy`,
             redirect_uris: [`${origin}/callback`],
-            scope: 'atproto transition:generic identity:*',
+            scope: 'atproto transition:generic',
             grant_types: ['authorization_code', 'refresh_token'],
             response_types: ['code'],
             token_endpoint_auth_method: 'none',

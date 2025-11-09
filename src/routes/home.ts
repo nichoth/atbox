@@ -14,10 +14,11 @@ export const HomeRoute:FunctionComponent<{
 }> = function HomeRoute ({ state }) {
     const pendingInput = useSignal<null|string>(null)
     const isResolving = useSignal<boolean>(false)
-    const pendingAka = useSignal<{ aka:string, handle:string }>({
-        aka: '',
-        handle: ''
-    })
+    // const pendingAka = useSignal<{ aka:string, handle:string, pw:string }>({
+    //     aka: '',
+    //     handle: '',
+    //     pw: ''
+    // })
 
     // Check for existing session on mount
     useEffect(() => {
@@ -36,18 +37,24 @@ export const HomeRoute:FunctionComponent<{
     /**
      * Set the aka string in the DID doc.
      */
-    const isAkaResolving = useSignal<boolean>(false)
-    const aka = useCallback(async (ev:SubmitEvent) => {
+    const akaSubmit = useCallback(async (ev:SubmitEvent) => {
         ev.preventDefault()
         debug('submit aka')
-        if (!pendingAka.value) return
-        isAkaResolving.value = true
-        await State.setAka(
-            state,
-            pendingAka.value.handle,
-            pendingAka.value.aka,
-        )
-        isAkaResolving.value = false
+        const form = ev.target as HTMLFormElement
+        const handle = form.elements['handle'].value
+        const password = form.elements['password'].value
+        const aka = form.elements['aka'].value
+
+        await State.setAka(state, handle, password, aka)
+    }, [])
+
+    const confirmEmail = useCallback(async (ev:SubmitEvent) => {
+        ev.preventDefault()
+        debug('confirm email code')
+        const form = ev.target as HTMLFormElement
+        const code = form.elements['email-code'].value
+
+        await State.confirmAkaUpdate(state, code)
     }, [])
 
     const isLoginResolving = useSignal<boolean>(false)
@@ -58,13 +65,15 @@ export const HomeRoute:FunctionComponent<{
         pendingInput.value = value
     }, [])
 
-    const akaInput = useCallback((ev:InputEvent) => {
-        const form = ev.currentTarget as HTMLFormElement
-        const els = form.elements
-        const aka = els['aka'].value
-        const handle = els['handle'].value
-        pendingAka.value = { aka, handle }
-    }, [])
+    // const akaInput = useCallback((ev:InputEvent) => {
+    //     const form = ev.currentTarget as HTMLFormElement
+    //     const els = form.elements
+    //     const aka = els['aka'].value
+    //     const handle = els['handle'].value
+    //     const pw = els['password'].value
+    //     debug('all the things', { aka, handle, pw })
+    //     pendingAka.value = { aka, handle, pw }
+    // }, [])
 
     const oauth = useCallback(async (ev:SubmitEvent) => {
         ev.preventDefault()
@@ -126,6 +135,10 @@ export const HomeRoute:FunctionComponent<{
                     </label>
                 </form>
             `}
+            <p>
+                This OAuth login does nothing btw.
+                It is just here to try things.
+            </p>
         </div>
 
         <hr />
@@ -178,55 +191,118 @@ export const HomeRoute:FunctionComponent<{
                     in the DID record.
                 </p>
 
-                <form class="aka" onSubmit=${aka} onInput=${akaInput}>
-                    <label for="handle">Your handle</label>
-                    <input
-                        required=${true}
-                        id="handle"
-                        placeholder="@alice.com"
-                        name="handle"
-                    />
+                <p>
+                    Bluesky requires a password for this operation, OAuth-only
+                    is not allowed. That means you do have to enter your
+                    password on this site, which is not great. FWIW, I do not do
+                    anything with your password. It is simply sent to Bluesky's
+                    API server.
+                </p>
 
-                    <label for="aka">
-                        New text
-                        <p id="aka-description">
-                            Add the URLs you want to identify with, for example,${NBSP}
-                            <code>https://github.com/alice</code>, if you are${NBSP}
-                            <code>alice</code>. This should be a JSON string, as
-                            shown in the current DID document.
+                ${state.akaUpdate.step.value === 'form' && html`
+                    <form class="aka" onSubmit=${akaSubmit}>
+                        <label for="handle">Your handle</label>
+                        <input
+                            required=${true}
+                            id="handle"
+                            placeholder="@alice.com"
+                            name="handle"
+                        />
+
+                        <label for="password">Password</label>
+                        <input
+                            required=${true}
+                            id="password"
+                            type="password"
+                            placeholder="Your password"
+                            name="password"
+                        />
+
+                        <label for="aka">
+                            New URLs
+                            <p id="aka-description">
+                                Add the URLs you want to identify with, for example,${NBSP}
+                                <code>https://github.com/alice</code>, if you are${NBSP}
+                                <code>alice</code>. This should be a JSON array.
+                            </p>
+
+                            <p>
+                                You will receive an email confirmation code.
+                            </p>
+
+                            <p class="warning">
+                                This is a destructive operation. This will totally
+                                replace the <code>alsoKnownAs</code> field in your
+                                DID document.
+                            </p>
+                        </label>
+
+                        <textarea
+                            id="aka"
+                            required=${true}
+                            name="aka"
+                            placeholder="${JSON.stringify(['at://alice.com', 'https://github.com/alice/']).replace(',', ', ')}"
+                        ></textarea>
+
+                        ${state.akaUpdate.error.value && html`
+                            <p class="error">${state.akaUpdate.error.value}</p>
+                        `}
+
+                        <div class="controls">
+                            <${Button}
+                                type="submit"
+                                class="btn"
+                                isSpinning=${state.akaUpdate.loading}
+                            >
+                                Request Email Confirmation
+                            <//>
+                        </div>
+                    </form>
+                `}
+
+                ${state.akaUpdate.step.value === 'email-code' && html`
+                    <form class="aka email-confirm" onSubmit=${confirmEmail}>
+                        <p>
+                            Check your email for a confirmation code and enter it below.
                         </p>
 
-                        <p class="warning">
-                            This is a destructive operation. This will totally
-                            replace the <code>alsoKnownAs</code> field in your
-                            DID document.
-                        </p>
-                    </label>
+                        <label for="email-code">Email confirmation code</label>
+                        <input
+                            required=${true}
+                            id="email-code"
+                            type="text"
+                            name="email-code"
+                            placeholder="123456"
+                            autocomplete="off"
+                        />
 
-                    <textarea
-                        id="aka"
-                        required=${true}
-                        name="aka"
-                        placeholder="${JSON.stringify(['at://alice.com', 'https://github.com/alice/']).replace(',', ', ')}"
-                    >
-                    
-                    </textarea>
+                        ${state.akaUpdate.error.value && html`
+                            <p class="error">${state.akaUpdate.error.value}</p>
+                        `}
 
-                    <p>
-                        This will start an OAuth login & authorization.
-                    </p>
+                        <div class="controls">
+                            <${Button}
+                                type="submit"
+                                class="btn"
+                                isSpinning=${state.akaUpdate.loading}
+                            >
+                                Confirm & Update
+                            <//>
+                        </div>
+                    </form>
+                `}
 
-                    <div class="controls">
-                        <${Button}
-                            type="submit"
+                ${state.akaUpdate.step.value === 'success' && html`
+                    <div class="success-message">
+                        <p class="success">✓ DID document updated successfully!</p>
+                        <button
                             class="btn"
-                            isSpinning=${isAkaResolving}
-                            disabled=${!pendingAka.value}
+                            onClick=${() => { state.akaUpdate.step.value = 'form' }}
                         >
-                            Update AKA
-                        <//>
+                            Update Again
+                        </button>
                     </div>
-                </form>
+                `}
             </div>
         </div>
     </div>`
