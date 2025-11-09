@@ -3,7 +3,10 @@ import { html } from 'htm/preact'
 import { useEffect } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
 import Debug from '@substrate-system/debug'
-import { BrowserOAuthClient, type DidDocument } from '@atproto/oauth-client-browser'
+import {
+    BrowserOAuthClient,
+    type DidDocument
+} from '@atproto/oauth-client-browser'
 import { Agent } from '@atproto/api'
 import ky from 'ky'
 import { State } from '../state.js'
@@ -20,11 +23,11 @@ export const CallbackRoute:FunctionComponent<{
     const error = useSignal<string|null>(null)
 
     useEffect(() => {
-        const init = async () => {
+        (async () => {
             try {
-                // Use current location origin
-                // (which will be ngrok URL if tunneling)
-                const origin = location.origin
+                const origin = import.meta.env.DEV ?
+                    'https://amalia-indeclinable-gaye.ngrok-free.dev' :
+                    location.origin
                 const clientId = `${origin}/client-metadata.json`
 
                 const client = new BrowserOAuthClient({
@@ -37,7 +40,7 @@ export const CallbackRoute:FunctionComponent<{
                         tos_uri: `${origin}/tos`,
                         policy_uri: `${origin}/policy`,
                         redirect_uris: [`${origin}/callback`],
-                        scope: 'atproto',
+                        scope: 'atproto transition:generic',
                         grant_types: ['authorization_code', 'refresh_token'],
                         response_types: ['code'],
                         token_endpoint_auth_method: 'none',
@@ -47,7 +50,7 @@ export const CallbackRoute:FunctionComponent<{
                 })
 
                 const result = await client.init()
-
+                debug('result', result)
                 if (result) {
                     debug('OAuth session established:', result.session.sub)
 
@@ -65,16 +68,18 @@ export const CallbackRoute:FunctionComponent<{
                             `https://plc.directory/${agent.assertDid}`).json()
 
                         // Sign a PLC operation to update alsoKnownAs
-                        const signedOpResponse = await agent.com.atproto.identity.signPlcOperation({
-                            ...didDoc,
-                            alsoKnownAs: Array.from(new Set([  // deduplicate
-                                ...(didDoc.alsoKnownAs || []),  // Keep existing entries
-                                newUrl,  // Add new URL
-                            ])),
-                        })
+                        const signedOpResponse = await agent.com.atproto
+                            .identity.signPlcOperation({
+                                ...didDoc,
+                                alsoKnownAs: Array.from(new Set([  // deduplicate
+                                    ...(didDoc.alsoKnownAs || []),
+                                    newUrl,
+                                ])),
+                            })
 
                         // Submit the signed operation
-                        await agent.com.atproto.identity.submitPlcOperation(signedOpResponse.data)
+                        await agent.com.atproto.identity
+                            .submitPlcOperation(signedOpResponse.data)
 
                         debug('DID document updated successfully')
                         localStorage.removeItem('pending-aka-update')
@@ -93,9 +98,7 @@ export const CallbackRoute:FunctionComponent<{
                 error.value = (err as Error).message || 'Authentication failed'
                 status.value = 'error'
             }
-        }
-
-        init()
+        })()
     }, [])
 
     return html`<div class="route callback">

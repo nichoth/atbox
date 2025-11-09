@@ -139,7 +139,7 @@ State.setAka = async function (
             tos_uri: `${origin}/tos`,
             policy_uri: `${origin}/policy`,
             redirect_uris: [`${origin}/callback`],
-            scope: 'atproto',
+            scope: 'atproto transition:generic',
             grant_types: ['authorization_code', 'refresh_token'],
             response_types: ['code'],
             token_endpoint_auth_method: 'none',

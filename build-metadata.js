@@ -12,6 +12,8 @@ const origin = process.env.NGROK_URL ||
 
 const clientId = `${origin}/client-metadata.json`
 
+console.log('proc env', process.env.NODE_ENV)
+
 const metadata = {
     client_id: clientId,
     client_name: 'At Box',
@@ -20,7 +22,7 @@ const metadata = {
     tos_uri: `${origin}/tos`,
     policy_uri: `${origin}/policy`,
     redirect_uris: [`${origin}/callback`],
-    scope: 'atproto',
+    scope: 'atproto transition:generic',
     grant_types: ['authorization_code', 'refresh_token'],
     response_types: ['code'],
     token_endpoint_auth_method: 'none',
@@ -29,6 +31,6 @@ const metadata = {
 }
 
 // Write the metadata file
-const outputPath = join('public', 'client-metadata.json')
+const outputPath = join('_public', 'client-metadata.json')
 writeFileSync(outputPath, JSON.stringify(metadata, null, 4))
 console.log(`Generated ${outputPath} for ${origin}`)
