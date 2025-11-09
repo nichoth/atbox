@@ -1,7 +1,10 @@
 import { type FunctionComponent } from 'preact'
 import { html } from 'htm/preact'
+import { State } from '../state.js'
 
-export const TosRoute:FunctionComponent = function () {
+export const TosRoute:FunctionComponent<{
+    state:ReturnType<typeof State>
+}> = function TosRoute ({ state: _state }) {
     return html`<div class="route tos">
         <h1>The Terms of Service</h1>
 

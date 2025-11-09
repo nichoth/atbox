@@ -14,11 +14,6 @@ export const HomeRoute:FunctionComponent<{
 }> = function HomeRoute ({ state }) {
     const pendingInput = useSignal<null|string>(null)
     const isResolving = useSignal<boolean>(false)
-    // const pendingAka = useSignal<{ aka:string, handle:string, pw:string }>({
-    //     aka: '',
-    //     handle: '',
-    //     pw: ''
-    // })
 
     // Check for existing session on mount
     useEffect(() => {
@@ -64,16 +59,6 @@ export const HomeRoute:FunctionComponent<{
         const value = input.value
         pendingInput.value = value
     }, [])
-
-    // const akaInput = useCallback((ev:InputEvent) => {
-    //     const form = ev.currentTarget as HTMLFormElement
-    //     const els = form.elements
-    //     const aka = els['aka'].value
-    //     const handle = els['handle'].value
-    //     const pw = els['password'].value
-    //     debug('all the things', { aka, handle, pw })
-    //     pendingAka.value = { aka, handle, pw }
-    // }, [])
 
     const oauth = useCallback(async (ev:SubmitEvent) => {
         ev.preventDefault()
@@ -294,7 +279,7 @@ export const HomeRoute:FunctionComponent<{
 
                 ${state.akaUpdate.step.value === 'success' && html`
                     <div class="success-message">
-                        <p class="success">✓ DID document updated successfully!</p>
+                        <p class="success">DID document updated successfully!</p>
                         <button
                             class="btn"
                             onClick=${() => { state.akaUpdate.step.value = 'form' }}
