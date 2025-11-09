@@ -5,10 +5,14 @@ import { join } from 'path'
 
 // Use NGROK_URL environment variable for local development
 // Otherwise use production URL
-const origin = process.env.NGROK_URL ||
-    ((process.env.NODE_ENV === 'development' || process.env.DEV) ?
-        'https://amalia-indeclinable-gaye.ngrok-free.dev' :
-        'https://atbox.dev')
+let origin = 'https://atbox.dev'
+if (process.env.NGROK_URL) {
+    console.log('** NGROK_URL **')
+    origin = process.env.NGROK_URL
+} else if (process.env.NODE_ENV === 'development' || process.env.DEV) {
+    console.log('**is dev**')
+    origin = 'https://amalia-indeclinable-gaye.ngrok-free.dev'
+}
 
 const clientId = `${origin}/client-metadata.json`
 
