@@ -16,6 +16,7 @@ const debug = Debug(import.meta.env.DEV)
 export function State (pds = 'https://bsky.social'):{
     route:Signal<string>;
     count:Signal<number>;
+    oauth:Signal<null|string>;
     _pds:string;
     _setRoute:(path:string)=>void;
     // DID lookup state
@@ -42,6 +43,7 @@ export function State (pds = 'https://bsky.social'):{
         _setRoute: onRoute.setRoute.bind(onRoute),
         count: signal<number>(0),
         route: signal<string>(location.pathname + location.search),
+        oauth: signal<null|string>(null),
         // DID lookup state
         didLookup: {
             input: signal(''),
@@ -117,6 +119,81 @@ State.fetchDid = async function (
     return didDoc
 }
 
+State.oauthLogin = async function (
+    state:ReturnType<typeof State>,
+    handleOrDid:string,
+    pds?:string
+) {
+    const origin = import.meta.env.DEV ?
+        'https://amalia-indeclinable-gaye.ngrok-free.dev' :
+        location.origin
+
+    const clientId = `${origin}/client-metadata.json`
+
+    debug('**client id**', clientId)
+
+    const client = new BrowserOAuthClient({
+        handleResolver: pds || state._pds,
+        clientMetadata: {
+            client_id: clientId,
+            client_name: 'At Box',
+            client_uri: origin,
+            logo_uri: `${origin}/logo.png`,
+            tos_uri: `${origin}/tos`,
+            policy_uri: `${origin}/policy`,
+            redirect_uris: [`${origin}/callback`],
+            scope: 'atproto transition:generic',
+            grant_types: ['authorization_code', 'refresh_token'],
+            response_types: ['code'],
+            token_endpoint_auth_method: 'none',
+            application_type: 'web',
+            dpop_bound_access_tokens: true
+        },
+    })
+
+    // Initialize and check for existing session
+    const result:undefined|{
+        session:OAuthSession;
+        state?:string|null
+    } = await client.init()
+
+    let session:OAuthSession
+    if (result) {
+        // session exists
+        session = result.session
+        debug(`${session.sub} was restored`)
+
+        const { state } = result
+        if (state) {
+            debug(
+                `${session.sub} was successfully authenticated (state: ${state})`,
+            )
+        } else {
+            debug(`${session.sub} was restored (last active session)`)
+        }
+    } else {
+        // No existing session, need to sign in
+        try {
+            // Strip '@' prefix if present
+            const cleanHandle = handleOrDid.startsWith('@') ?
+                handleOrDid.slice(1) :
+                handleOrDid
+
+            debug('Attempting to sign in with handle:', cleanHandle)
+            debug('Handle resolver:', pds || state._pds)
+            debug('Origin:', origin)
+            await client.signIn(cleanHandle, {
+                state: 'setting-aka',
+            })
+            // Page will redirect
+        } catch (err) {
+            debug('Sign in failed:', err)
+            console.error('Full error:', err)
+            throw new Error('Authentication failed: ' + err)
+        }
+    }
+}
+
 State.setAka = async function (
     state:ReturnType<typeof State>,
     handleOrDid:string,
@@ -159,6 +236,7 @@ State.setAka = async function (
     let session:OAuthSession
 
     if (result) {
+        // session exists
         session = result.session
         debug(`${session.sub} was restored`)
 

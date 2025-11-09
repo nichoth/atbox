@@ -74,6 +74,13 @@ https://atbox.dev/callback#state=GKXFyh...&iss=https%3A%2F%2Fbsky.social&code=co
 openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
 ```
 
+#### Use ngrok locally
+
+```sh
+ngrok http https://localhost:8888
+```
+
+
 -------
 
 ## Etc

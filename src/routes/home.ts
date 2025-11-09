@@ -41,6 +41,8 @@ export const HomeRoute:FunctionComponent<{
         isAkaResolving.value = false
     }, [])
 
+    const isLoginResolving = useSignal<boolean>(false)
+
     const input = useCallback((ev:InputEvent) => {
         const input = ev.target as HTMLInputElement
         const value = input.value
@@ -60,12 +62,46 @@ export const HomeRoute:FunctionComponent<{
         pendingAka.value = { aka, handle }
     }, [])
 
+    const oauth = useCallback(async (ev:SubmitEvent) => {
+        ev.preventDefault()
+        debug('login')
+        const form = ev.target as HTMLFormElement
+        const handle = form.elements['login-handle']
+        isLoginResolving.value = true
+        await State.oauthLogin(state, handle.value)
+        isLoginResolving.value = false
+    }, [])
+
     return html`<div class="route home">
         <h1>At Box</h1>
 
         <p>
             Some nice tools for working with your Bluesky DID record.
         </p>
+
+        <form onSubmit=${oauth} class="oauth${isLoginResolving ? ' resolving' : ''}">
+            <${Button}
+                type="submit"
+                class="btn"
+                isSpinning=${isAkaResolving}
+                disabled=${!pendingAka.value}
+            >
+                Login with OAuth
+            <//>
+
+            <label for="login-handle">
+                Bluesky hanlde
+                <input
+                    id="login-handle"
+                    name="login-handle"
+                    required=${true}
+                    type="text"
+                    placeholder="@alice.com"
+                />
+            </label>
+        </form>
+
+        <hr />
 
         <div class="container">
             <div class="feature-card">
@@ -126,18 +162,19 @@ export const HomeRoute:FunctionComponent<{
 
                     <label for="aka">New text</label>
                     <p id="aka-description">
-                        Add the URL you want to identify with, for example,${NBSP}
+                        Add the URLs you want to identify with, for example,${NBSP}
                         <code>https://github.com/alice</code>, if you are${NBSP}
-                        <code>alice</code>.
+                        <code>alice</code>. This should be a JSON string, as
+                        shown in the current DID document.
                     </p>
-                    <input
-                        required=${true}
-                        aria-describedby="aka-description"
-                        name="aka"
+                    <textarea
                         id="aka"
-                        type="text"
-                        placeholder="https://foobar.com"
-                    />
+                        required=${true}
+                        name="aka"
+                        placeholder="${JSON.stringify(['at://alice.com', 'https://github.com/alice/']).replace(',', ', ')}"
+                    >
+                    
+                    </textarea>
 
                     <p>
                         This will start an OAuth login & authorization.
