@@ -58,8 +58,16 @@ npm start
 npm run build
 ```
 
+## OAuth
+
+After the oauth part, they will forward you to a URL like this:
+
+```
+https://atbox.dev/callback#state=GKXFyh...&iss=https%3A%2F%2Fbsky.social&code=cod-e627b3f8...
+```
+
 ## Etc
 
 - **Framework**: Preact with `htm`
-- **State Management**: `@preact/signals`
+- **State**: `@preact/signals`
 - **AT Protocol**: `@atproto/api`

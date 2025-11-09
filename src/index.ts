@@ -32,7 +32,7 @@ export const App:FunctionComponent = function App () {
 
     return html`<div class="app">
         <main>
-            <${ChildNode} state=${state} />
+            <${ChildNode} state=${state} params=${match.params} />
         </main>
     </div>`
 }

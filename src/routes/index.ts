@@ -13,5 +13,9 @@ export default function _Router ():InstanceType<typeof Router> {
         return TosRoute
     })
 
+    router.addRoute('/callback#:hash', () => {
+
+    })
+
     return router
 }
