@@ -22,6 +22,9 @@ export const HomeRoute:FunctionComponent<{
         isResolving.value = false
     }, [])
 
+    /**
+     * Set the aka string in the DID doc.
+     */
     const isAkaResolving = useSignal<boolean>(false)
     const aka = useCallback(async (ev:SubmitEvent) => {
         ev.preventDefault()
@@ -70,6 +73,10 @@ export const HomeRoute:FunctionComponent<{
                 </p>
 
                 <form onSubmit=${fetchDid}>
+                    <label for="did">
+                        Handle
+                    </label>
+
                     <input
                         name="did"
                         id="did"
@@ -128,6 +135,7 @@ export const HomeRoute:FunctionComponent<{
 
                     <div class="controls">
                         <${Button}
+                            type="submit"
                             class="btn"
                             isSpinning=${isAkaResolving}
                             disabled=${!pendingAka.value}
