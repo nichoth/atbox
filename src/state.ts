@@ -142,7 +142,7 @@ State.oauthLogin = async function (
             tos_uri: `${origin}/tos`,
             policy_uri: `${origin}/policy`,
             redirect_uris: [`${origin}/callback`],
-            scope: 'atproto transition:generic',
+            scope: 'atproto transition:generic identity:*',
             grant_types: ['authorization_code', 'refresh_token'],
             response_types: ['code'],
             token_endpoint_auth_method: 'none',
@@ -197,81 +197,102 @@ State.oauthLogin = async function (
 State.setAka = async function (
     state:ReturnType<typeof State>,
     handleOrDid:string,
-    newUrl:string,
+    newText:string,
     pds?:string
 ):Promise<void> {
-    const origin = import.meta.env.DEV ?
-        'https://amalia-indeclinable-gaye.ngrok-free.dev' :
-        location.origin
-
-    const clientId = `${origin}/client-metadata.json`
-
-    console.log('**client id**', clientId)
-
-    const client = new BrowserOAuthClient({
-        handleResolver: pds || state._pds,
-        clientMetadata: {
-            client_id: clientId,
-            client_name: 'At Box',
-            client_uri: origin,
-            logo_uri: `${origin}/logo.png`,
-            tos_uri: `${origin}/tos`,
-            policy_uri: `${origin}/policy`,
-            redirect_uris: [`${origin}/callback`],
-            scope: 'atproto transition:generic',
-            grant_types: ['authorization_code', 'refresh_token'],
-            response_types: ['code'],
-            token_endpoint_auth_method: 'none',
-            application_type: 'web',
-            dpop_bound_access_tokens: true
-        },
-    })
-
-    // Initialize and check for existing session
-    const result:undefined|{
-        session:OAuthSession;
-        state?:string|null
-    } = await client.init()
-
     let session:OAuthSession
 
-    if (result) {
-        // session exists
-        session = result.session
-        debug(`${session.sub} was restored`)
-
-        const { state } = result
-        if (state) {
-            debug(
-                `${session.sub} was successfully authenticated (state: ${state})`,
-            )
-        } else {
-            debug(`${session.sub} was restored (last active session)`)
-        }
+    // Check if we already have an active OAuth session
+    if (state.oauth.value) {
+        debug('Using existing OAuth session:', state.oauth.value.sub)
+        session = state.oauth.value
     } else {
-        // No existing session, need to sign in
-        try {
-            // Strip '@' prefix if present
-            const cleanHandle = handleOrDid.startsWith('@') ?
-                handleOrDid.slice(1) :
-                handleOrDid
+        // No existing session, need to initiate OAuth flow
+        const origin = import.meta.env.DEV ?
+            'https://amalia-indeclinable-gaye.ngrok-free.dev' :
+            location.origin
 
-            debug('Attempting to sign in with handle:', cleanHandle)
-            debug('Handle resolver:', pds || state._pds)
-            debug('Origin:', origin)
-            await client.signIn(cleanHandle, {
-                state: 'setting-aka',
-            })
-            return  // Page will redirect
-        } catch (err) {
-            debug('Sign in failed:', err)
-            console.error('Full error:', err)
-            throw new Error('Authentication failed: ' + err)
+        const clientId = `${origin}/client-metadata.json`
+
+        debug('**client id**', clientId)
+
+        const client = new BrowserOAuthClient({
+            handleResolver: pds || state._pds,
+            clientMetadata: {
+                client_id: clientId,
+                client_name: 'At Box',
+                client_uri: origin,
+                logo_uri: `${origin}/logo.png`,
+                tos_uri: `${origin}/tos`,
+                policy_uri: `${origin}/policy`,
+                redirect_uris: [`${origin}/callback`],
+                scope: 'atproto transition:generic identity:*',
+                grant_types: ['authorization_code', 'refresh_token'],
+                response_types: ['code'],
+                token_endpoint_auth_method: 'none',
+                application_type: 'web',
+                dpop_bound_access_tokens: true
+            },
+        })
+
+        // Initialize and check for existing session
+        const result:undefined|{
+            session:OAuthSession;
+            state?:string|null
+        } = await client.init()
+
+        if (result) {
+            // session exists
+            session = result.session
+            state.oauth.value = session
+            debug(`${session.sub} was restored`)
+
+            const { state: oauthState } = result
+            if (oauthState) {
+                debug(
+                    `${session.sub} was successfully authenticated ` +
+                        `(state: ${oauthState})`,
+                )
+            } else {
+                debug(`${session.sub} was restored (last active session)`)
+            }
+        } else {
+            // No existing session, need to sign in
+            // Store the pending update in localStorage
+            localStorage.setItem('pending-aka-update', JSON.stringify({ newText }))
+
+            try {
+                // Strip '@' prefix if present
+                const cleanHandle = handleOrDid.startsWith('@') ?
+                    handleOrDid.slice(1) :
+                    handleOrDid
+
+                debug('Attempting to sign in with handle:', cleanHandle)
+                debug('Handle resolver:', pds || state._pds)
+                debug('Origin:', origin)
+                await client.signIn(cleanHandle, {
+                    state: 'setting-aka',
+                })
+                return  // Page will redirect
+            } catch (err) {
+                debug('Sign in failed:', err)
+                console.error('Full error:', err)
+                throw new Error('Authentication failed: ' + err)
+            }
         }
     }
 
     // Create Agent with the OAuth session
     const agent = new Agent(session)
+
+    let newUrls:string[]
+    try {
+        newUrls = JSON.parse(newText)
+    } catch (err) {
+        debug('invalid JSON...', err)
+        debug('invalid JSON...', newText)
+        throw err
+    }
 
     try {
         // Get current DID document to preserve existing data
@@ -281,14 +302,14 @@ State.setAka = async function (
         // Sign a PLC operation to update alsoKnownAs
         const signedOpResponse = await agent.com.atproto.identity.signPlcOperation({
             ...didDoc,
-            alsoKnownAs: Array.from(new Set([  // deduplicate
-                ...(didDoc.alsoKnownAs || []),  // Keep existing entries
-                newUrl,  // Add new URL
-            ])),
+            // do not merge the alsoKnownAs array
+            // this is a destructive update
+            alsoKnownAs: Array.from(new Set(newUrls)),  // deduplicate
         })
 
         // Submit the signed operation
-        // The response has the structure { operation: <signed operation object> }
+        // The response has the structure
+        // { operation: <signed operation object> }
         await agent.com.atproto.identity.submitPlcOperation(signedOpResponse.data)
 
         debug('DID document updated successfully')
@@ -318,7 +339,7 @@ State.checkSession = async function (state:ReturnType<typeof State>):Promise<voi
             tos_uri: `${origin}/tos`,
             policy_uri: `${origin}/policy`,
             redirect_uris: [`${origin}/callback`],
-            scope: 'atproto transition:generic',
+            scope: 'atproto transition:generic identity:*',
             grant_types: ['authorization_code', 'refresh_token'],
             response_types: ['code'],
             token_endpoint_auth_method: 'none',
@@ -361,7 +382,7 @@ State.logout = async function (state:ReturnType<typeof State>):Promise<void> {
             tos_uri: `${origin}/tos`,
             policy_uri: `${origin}/policy`,
             redirect_uris: [`${origin}/callback`],
-            scope: 'atproto transition:generic',
+            scope: 'atproto transition:generic identity:*',
             grant_types: ['authorization_code', 'refresh_token'],
             response_types: ['code'],
             token_endpoint_auth_method: 'none',

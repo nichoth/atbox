@@ -8,7 +8,7 @@
     "redirect_uris": [
         "https://amalia-indeclinable-gaye.ngrok-free.dev/callback"
     ],
-    "scope": "atproto transition:generic",
+    "scope": "atproto transition:generic identity:*",
     "grant_types": [
         "authorization_code",
         "refresh_token"

@@ -3,6 +3,8 @@
     --success-border: #4caf50;
     --success-bg: #f1f8f4;
     --success-color: #2e7d32;
+    --warning-bgc: #ffe3001f;
+    --warning-border: #ffce00;
     /* --primary-accent: #00aeef; */
     /* --primary-accent: #00c3ff; */
 }
@@ -36,6 +38,12 @@ form.oauth {
     & .status-text {
         color: var(--success-color);
     }
+}
+
+p.warning {
+    background-color: var(--warning-bgc);
+    border: 2px solid var(--warning-border);
+    padding: 1rem;
 }
 
 .oauth-status {
@@ -145,7 +153,7 @@ form.aka {
 
     & textarea {
         width: 100%;
-        min-height: 8rem;
+        min-height: 10rem;
         padding: 0.5rem;
         line-height: 1.4;
     }

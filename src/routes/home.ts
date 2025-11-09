@@ -14,6 +14,10 @@ export const HomeRoute:FunctionComponent<{
 }> = function HomeRoute ({ state }) {
     const pendingInput = useSignal<null|string>(null)
     const isResolving = useSignal<boolean>(false)
+    const pendingAka = useSignal<{ aka:string, handle:string }>({
+        aka: '',
+        handle: ''
+    })
 
     // Check for existing session on mount
     useEffect(() => {
@@ -53,11 +57,6 @@ export const HomeRoute:FunctionComponent<{
         const value = input.value
         pendingInput.value = value
     }, [])
-
-    const pendingAka = useSignal<{ aka:string, handle:string }>({
-        aka: '',
-        handle: ''
-    })
 
     const akaInput = useCallback((ev:InputEvent) => {
         const form = ev.currentTarget as HTMLFormElement
@@ -188,13 +187,22 @@ export const HomeRoute:FunctionComponent<{
                         name="handle"
                     />
 
-                    <label for="aka">New text</label>
-                    <p id="aka-description">
-                        Add the URLs you want to identify with, for example,${NBSP}
-                        <code>https://github.com/alice</code>, if you are${NBSP}
-                        <code>alice</code>. This should be a JSON string, as
-                        shown in the current DID document.
-                    </p>
+                    <label for="aka">
+                        New text
+                        <p id="aka-description">
+                            Add the URLs you want to identify with, for example,${NBSP}
+                            <code>https://github.com/alice</code>, if you are${NBSP}
+                            <code>alice</code>. This should be a JSON string, as
+                            shown in the current DID document.
+                        </p>
+
+                        <p class="warning">
+                            This is a destructive operation. This will totally
+                            replace the <code>alsoKnownAs</code> field in your
+                            DID document.
+                        </p>
+                    </label>
+
                     <textarea
                         id="aka"
                         required=${true}
