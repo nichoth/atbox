@@ -1,5 +1,5 @@
-// import { html } from 'htm/preact'
 import Router from '@substrate-system/routes'
+import { TosRoute } from './tos.js'
 import { HomeRoute } from './home.js'
 
 export default function _Router ():InstanceType<typeof Router> {
@@ -7,6 +7,10 @@ export default function _Router ():InstanceType<typeof Router> {
 
     router.addRoute('/', () => {
         return HomeRoute
+    })
+
+    router.addRoute('/tos', () => {
+        return TosRoute
     })
 
     return router

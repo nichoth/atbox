@@ -123,7 +123,7 @@ State.setAka = async function (
     newUrl:string,
     pds?:string
 ):Promise<void> {
-    const clientId = location.origin + '/client-metadata.json'
+    const clientId = 'https://atbox.dev/client-metadata.json'
 
     const client = new BrowserOAuthClient({
         handleResolver: pds || state._pds,
