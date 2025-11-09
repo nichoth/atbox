@@ -7,6 +7,8 @@ import { Button } from '../components/button.js'
 import { State } from '../state.js'
 const debug = Debug(import.meta.env.DEV)
 
+export const NBSP = '\u00A0'
+
 export const HomeRoute:FunctionComponent<{
     state:ReturnType<typeof State>
 }> = function HomeRoute ({ state }) {
@@ -51,7 +53,7 @@ export const HomeRoute:FunctionComponent<{
     })
 
     const akaInput = useCallback((ev:InputEvent) => {
-        const form = ev.target as HTMLFormElement
+        const form = ev.currentTarget as HTMLFormElement
         const els = form.elements
         const aka = els['aka'].value
         const handle = els['handle'].value
@@ -116,17 +118,25 @@ export const HomeRoute:FunctionComponent<{
                 <form class="aka" onSubmit=${aka} onInput=${akaInput}>
                     <label for="handle">Your handle</label>
                     <input
+                        required=${true}
                         id="handle"
                         placeholder="@alice.com"
                         name="handle"
                     />
 
                     <label for="aka">New text</label>
+                    <p id="aka-description">
+                        Add the URL you want to identify with, for example,${NBSP}
+                        <code>https://github.com/alice</code>, if you are${NBSP}
+                        <code>alice</code>.
+                    </p>
                     <input
+                        required=${true}
+                        aria-describedby="aka-description"
                         name="aka"
                         id="aka"
                         type="text"
-                        placeholder="foobar.com"
+                        placeholder="https://foobar.com"
                     />
 
                     <p>
