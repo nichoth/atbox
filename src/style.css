@@ -1,5 +1,8 @@
 :root {
     --primary-accent: #0ef;
+    --success-border: #4caf50;
+    --success-bg: #f1f8f4;
+    --success-color: #2e7d32;
     /* --primary-accent: #00aeef; */
     /* --primary-accent: #00c3ff; */
 }
@@ -13,13 +16,37 @@ p {
     margin: 0.5rem 0;
 }
 
-form.oauth {
+.oauth-section {
     margin: 1rem 0;
+}
+
+form.oauth {
     display: flex;
     gap: 1rem;
 
     & label input {
         display: block;
+    }
+}
+
+.success {
+    border: 2px solid var(--success-border);
+    background-color: var(--success-bg);
+
+    & .status-text {
+        color: var(--success-color);
+    }
+}
+
+.oauth-status {
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+
+    & strong {
+        word-break: break-all;
     }
 }
 

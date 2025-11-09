@@ -53,6 +53,8 @@ export const CallbackRoute:FunctionComponent<{
                 debug('result', result)
                 if (result) {
                     debug('OAuth session established:', result.session.sub)
+                    // Update state with session
+                    state.oauth.value = result.session
 
                     // Check if we have a pending AKA update
                     const pendingUpdate = localStorage.getItem('pending-aka-update')

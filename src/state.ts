@@ -16,7 +16,7 @@ const debug = Debug(import.meta.env.DEV)
 export function State (pds = 'https://bsky.social'):{
     route:Signal<string>;
     count:Signal<number>;
-    oauth:Signal<null|string>;
+    oauth:Signal<null|OAuthSession>;
     _pds:string;
     _setRoute:(path:string)=>void;
     // DID lookup state
@@ -43,7 +43,7 @@ export function State (pds = 'https://bsky.social'):{
         _setRoute: onRoute.setRoute.bind(onRoute),
         count: signal<number>(0),
         route: signal<string>(location.pathname + location.search),
-        oauth: signal<null|string>(null),
+        oauth: signal<null|OAuthSession>(null),
         // DID lookup state
         didLookup: {
             input: signal(''),
@@ -296,4 +296,94 @@ State.setAka = async function (
         debug('Update failed...', err)
         throw err
     }
+}
+
+/**
+ * Check if there's an active OAuth session and update state
+ */
+State.checkSession = async function (state:ReturnType<typeof State>):Promise<void> {
+    const origin = import.meta.env.DEV ?
+        'https://amalia-indeclinable-gaye.ngrok-free.dev' :
+        location.origin
+
+    const clientId = `${origin}/client-metadata.json`
+
+    const client = new BrowserOAuthClient({
+        handleResolver: state._pds,
+        clientMetadata: {
+            client_id: clientId,
+            client_name: 'At Box',
+            client_uri: origin,
+            logo_uri: `${origin}/logo.png`,
+            tos_uri: `${origin}/tos`,
+            policy_uri: `${origin}/policy`,
+            redirect_uris: [`${origin}/callback`],
+            scope: 'atproto transition:generic',
+            grant_types: ['authorization_code', 'refresh_token'],
+            response_types: ['code'],
+            token_endpoint_auth_method: 'none',
+            application_type: 'web',
+            dpop_bound_access_tokens: true
+        },
+    })
+
+    const result = await client.init()
+    if (result) {
+        state.oauth.value = result.session
+        debug('Session found:', result.session.sub)
+    } else {
+        state.oauth.value = null
+    }
+}
+
+/**
+ * Logout from OAuth session
+ */
+State.logout = async function (state:ReturnType<typeof State>):Promise<void> {
+    if (!state.oauth.value) {
+        debug('No active session to logout from')
+        return
+    }
+
+    const origin = import.meta.env.DEV ?
+        'https://amalia-indeclinable-gaye.ngrok-free.dev' :
+        location.origin
+
+    const clientId = `${origin}/client-metadata.json`
+
+    const client = new BrowserOAuthClient({
+        handleResolver: state._pds,
+        clientMetadata: {
+            client_id: clientId,
+            client_name: 'At Box',
+            client_uri: origin,
+            logo_uri: `${origin}/logo.png`,
+            tos_uri: `${origin}/tos`,
+            policy_uri: `${origin}/policy`,
+            redirect_uris: [`${origin}/callback`],
+            scope: 'atproto transition:generic',
+            grant_types: ['authorization_code', 'refresh_token'],
+            response_types: ['code'],
+            token_endpoint_auth_method: 'none',
+            application_type: 'web',
+            dpop_bound_access_tokens: true
+        },
+    })
+
+    try {
+        // Initialize client to restore the session
+        const result = await client.init()
+        if (result) {
+            // Revoke the session
+            await client.revoke(result.session.sub)
+            debug('Session revoked:', result.session.sub)
+        }
+    } catch (err) {
+        debug('Error during logout:', err)
+        // Continue to clear local state even if revoke fails
+    }
+
+    // Clear local state regardless
+    state.oauth.value = null
+    debug('Logged out')
 }

@@ -1,5 +1,5 @@
 import { html } from 'htm/preact'
-import { useCallback } from 'preact/hooks'
+import { useCallback, useEffect } from 'preact/hooks'
 import { FunctionComponent } from 'preact'
 import { useSignal } from '@preact/signals'
 import Debug from '@substrate-system/debug'
@@ -14,6 +14,11 @@ export const HomeRoute:FunctionComponent<{
 }> = function HomeRoute ({ state }) {
     const pendingInput = useSignal<null|string>(null)
     const isResolving = useSignal<boolean>(false)
+
+    // Check for existing session on mount
+    useEffect(() => {
+        State.checkSession(state)
+    }, [])
 
     const fetchDid = useCallback(async (ev:SubmitEvent) => {
         ev.preventDefault()
@@ -72,6 +77,12 @@ export const HomeRoute:FunctionComponent<{
         isLoginResolving.value = false
     }, [])
 
+    const logout = useCallback(async (ev:Event) => {
+        ev.preventDefault()
+        debug('logout')
+        await State.logout(state)
+    }, [])
+
     return html`<div class="route home">
         <h1>At Box</h1>
 
@@ -79,27 +90,44 @@ export const HomeRoute:FunctionComponent<{
             Some nice tools for working with your Bluesky DID record.
         </p>
 
-        <form onSubmit=${oauth} class="oauth${isLoginResolving ? ' resolving' : ''}">
-            <${Button}
-                type="submit"
-                class="btn"
-                isSpinning=${isAkaResolving}
-                disabled=${!pendingAka.value}
-            >
-                Login with OAuth
-            <//>
+        <div class="oauth-section">
+            ${state.oauth.value ? html`
+                <div class="oauth-status success logged-in">
+                    <p class="status-text">
+                        Logged in as <strong>${state.oauth.value.sub}</strong>
+                    </p>
+                    <${Button}
+                        onClick=${logout}
+                        class="btn logout-btn"
+                    >
+                        Logout
+                    <//>
+                </div>
+            ` : html`
+                <form onSubmit=${oauth} class="oauth${isLoginResolving.value ? ' resolving' : ''}">
+                    <${Button}
+                        type="submit"
+                        class="btn"
+                        isSpinning=${isLoginResolving}
+                        disabled=${!pendingInput.value}
+                    >
+                        Login with OAuth
+                    <//>
 
-            <label for="login-handle">
-                Bluesky hanlde
-                <input
-                    id="login-handle"
-                    name="login-handle"
-                    required=${true}
-                    type="text"
-                    placeholder="@alice.com"
-                />
-            </label>
-        </form>
+                    <label for="login-handle">
+                        Bluesky handle
+                        <input
+                            id="login-handle"
+                            name="login-handle"
+                            required=${true}
+                            type="text"
+                            placeholder="@alice.com"
+                            onInput=${input}
+                        />
+                    </label>
+                </form>
+            `}
+        </div>
 
         <hr />
 
