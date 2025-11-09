@@ -123,20 +123,19 @@ State.setAka = async function (
     newUrl:string,
     pds?:string
 ):Promise<void> {
-    const clientId = 'https://atbox.dev/client-metadata.json'
+    const origin = import.meta.env.DEV ? 'http://127.0.0.1' : location.origin
+    const clientId = `${origin}/client-metadata.json`
 
     const client = new BrowserOAuthClient({
         handleResolver: pds || state._pds,
         clientMetadata: {
-            // Must be the same URL as the one used to obtain this JSON object
-            // client_id: 'https://my-app.com/client-metadata.json',
             client_id: clientId,
             client_name: 'At Box',
-            client_uri: 'https://atbox.dev',
-            logo_uri: 'https://atbox.dev/logo.png',
-            tos_uri: 'https://atbox.dev/tos',
-            policy_uri: 'https://atbox.dev/policy',
-            redirect_uris: ['https://atbox.dev/callback'],
+            client_uri: origin,
+            logo_uri: `${origin}/logo.png`,
+            tos_uri: `${origin}/tos`,
+            policy_uri: `${origin}/policy`,
+            redirect_uris: [`${origin}/callback`],
             scope: 'atproto',
             grant_types: ['authorization_code', 'refresh_token'],
             response_types: ['code'],
