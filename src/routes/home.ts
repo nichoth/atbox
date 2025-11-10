@@ -320,6 +320,16 @@ export const HomeRoute:FunctionComponent<{
                         atwork.place
                     </a>
                 </li>
+                <li>
+                    <a href="https://github.com/nichoth/atbox">
+                        Source code for this website
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/substrate-system/at">
+                        <code>at</code> CLI tool
+                    </a>
+                </li>
             </ul>
         </footer>
     </div>`
