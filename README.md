@@ -11,7 +11,10 @@ GUI for DIDs.
   * [Update `alsoKnownAs`](#update-alsoknownas)
 - [How It Works](#how-it-works)
 - [Develop](#develop)
+- [OAuth](#oauth)
+  * [Local OAuth](#local-oauth)
 - [Etc](#etc)
+- [See also](#see-also)
 
 <!-- tocstop -->
 
@@ -68,16 +71,54 @@ https://atbox.dev/callback#state=GKXFyh...&iss=https%3A%2F%2Fbsky.social&code=co
 
 ### Local OAuth
 
-#### Generate a self-signed certificate
+Oauth is hard to test...
 
-```
-openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
-```
+I have been using `ngrok`:
 
 #### Use ngrok locally
 
 ```sh
 ngrok http https://localhost:8888
+```
+
+Then in a different terminal, start the localhost dev server:
+
+```sh
+npm start
+```
+
+#### Generate a self-signed certificate
+
+And you need to generate some certifacates:
+
+```
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+```
+
+And add this to `vite.config.js`:
+
+```js
+
+{
+  // ...
+
+  server: {
+      https: {
+        key: fs.readFileSync('./key.pem'),
+        cert: fs.readFileSync('./cert.pem')
+      },
+      port: 8888,
+      host: 'atbox.test',
+      open: true,
+      proxy: {
+          '/api': {
+              target: 'http://localhost:9999/.netlify/functions',
+              changeOrigin: true,
+              rewrite: path => path.replace(/^\/api/, ''),
+          },
+      },
+  }
+}
 ```
 
 
@@ -88,3 +129,8 @@ ngrok http https://localhost:8888
 - **Framework**: Preact with `htm`
 - **State**: `@preact/signals`
 - **AT Protocol**: `@atproto/api`
+
+## See also
+
+* [atwork.place](https://atwork.place/)
+* [Weather Vane](https://verify.aviary.domains/)
