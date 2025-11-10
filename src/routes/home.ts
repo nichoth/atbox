@@ -298,7 +298,9 @@ export const HomeRoute:FunctionComponent<{
         <footer>
             <p>
                 This is open source${ELLIPSIS} See${NBSP}
-                <a href=""></a>
+                <a target="_blank" href="https://github.com/nichoth/atbox">
+                    github.com/nichoth/atbox
+                </a>.
             </p>
 
             <h2>See Also</h2>
@@ -306,6 +308,12 @@ export const HomeRoute:FunctionComponent<{
                 <li>
                     <a href="https://verify.aviary.domains/">
                         Weather Vane
+                    </a>
+                </li>
+
+                <li>
+                    <a href="https://atwork.place/">
+                        atwork.place
                     </a>
                 </li>
             </ul>
