@@ -218,7 +218,10 @@ export const HomeRoute:FunctionComponent<{
                             <p class="warning">
                                 This is a destructive operation. This will totally
                                 replace the <code>alsoKnownAs</code> field in your
-                                DID document.
+                                DID document. I would recommend copying and
+                                pasting the <code>alsoKnownAs</code> field from
+                                the DID lookup section, and then adding
+                                additional URLs to it.
                             </p>
                         </label>
 
