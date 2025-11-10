@@ -130,6 +130,14 @@ And add this to `vite.config.js`:
 - **State**: `@preact/signals`
 - **AT Protocol**: `@atproto/api`
 
+
+### Things I Learned
+
+* You have to use a password for DID doc updates
+* cannot update your DID doc to an invalid state
+* I think the `at://` URL has to come first in the `alsoKnownAs` array.
+
+
 ## See also
 
 * [atwork.place](https://atwork.place/)

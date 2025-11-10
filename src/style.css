@@ -15,7 +15,11 @@ h1 {
 }
 
 h2 {
-    margin-bottom: 1rem;
+    margin: 1rem 0;
+
+    &:first-child {
+        margin-top: 0;
+    }
 }
 
 p {
@@ -24,6 +28,10 @@ p {
 
 .oauth-section {
     margin: 1rem 0;
+}
+
+li {
+    margin-bottom: 0.4rem;
 }
 
 form.oauth {
