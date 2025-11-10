@@ -112,6 +112,7 @@ export const HomeRoute:FunctionComponent<{
                         Bluesky handle
                         <input
                             id="login-handle"
+                            autocomplete="username"
                             name="login-handle"
                             required=${true}
                             type="text"
@@ -191,6 +192,7 @@ export const HomeRoute:FunctionComponent<{
                         <input
                             required=${true}
                             id="handle"
+                            autocomplete="username"
                             placeholder="@alice.com"
                             name="handle"
                         />
@@ -199,6 +201,7 @@ export const HomeRoute:FunctionComponent<{
                         <input
                             required=${true}
                             id="password"
+                            autocomplete="current-password"
                             type="password"
                             placeholder="Your password"
                             name="password"
@@ -252,7 +255,8 @@ export const HomeRoute:FunctionComponent<{
                 ${state.akaUpdate.step.value === 'email-code' && html`
                     <form class="aka email-confirm" onSubmit=${confirmEmail}>
                         <p>
-                            Check your email for a confirmation code and enter it below.
+                            Check your email for a confirmation code and enter
+                            it below.
                         </p>
 
                         <label for="email-code">Email confirmation code</label>

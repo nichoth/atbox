@@ -44,9 +44,10 @@ export default defineConfig({
     },
     build: {
         target: 'esnext',
-        minify: false,
+        minify: 'esbuild',
+        cssMinify: true,
         outDir: './public',
         emptyOutDir: true,
-        sourcemap: 'inline'
+        sourcemap: true
     }
 })
