@@ -290,5 +290,16 @@ export const HomeRoute:FunctionComponent<{
                 `}
             </div>
         </div>
+
+        <div>
+            <h2>See Also</h2>
+            <ul>
+                <li>
+                    <a href="https://verify.aviary.domains/">
+                        Weather Vane
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>`
 }
