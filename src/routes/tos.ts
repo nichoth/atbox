@@ -1,10 +1,12 @@
 import { type FunctionComponent } from 'preact'
 import { html } from 'htm/preact'
 import { State } from '../state.js'
+import './tos.css'
 
 export const TosRoute:FunctionComponent<{
-    state:ReturnType<typeof State>
-}> = function TosRoute ({ state: _state }) {
+    state:ReturnType<typeof State>;
+    params?:Record<string, string>;
+}> = function TosRoute () {
     return html`<div class="route tos">
         <h1>The Terms of Service</h1>
 
@@ -20,7 +22,7 @@ export const TosRoute:FunctionComponent<{
         </p>
 
         <h2>2. User Responsibilities</h2>
-        
+
         <h3>2.1 Account Security</h3>
         <ul>
             <li>You are responsible for maintaining the security of your Bluesky account credentials</li>
@@ -203,11 +205,13 @@ export const TosRoute:FunctionComponent<{
 
         <h2>15. Contact Information</h2>
         <p>
-            If you have any questions about these Terms, please contact us at:
-            <strong>[Your Email Address]</strong>
+            If you have any questions about these Terms, please contact
+            us at: <strong>
+                <a href="mailto:mail@atbox.dev">mail@atbox.dev</a>
+            </strong>
         </p>
 
-        <hr>
+        <hr />
 
         <p>
             <em>
