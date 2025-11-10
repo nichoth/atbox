@@ -9,9 +9,9 @@ import './style.css'
 
 const state = State()
 const router = Router()
-const debug = createDebug(import.meta.env.DEV)
+const debug = createDebug(import.meta?.env?.DEV)
 
-if (import.meta.env.DEV || import.meta.env.MODE === 'staging') {
+if (import.meta.env?.DEV || import.meta.env?.MODE === 'staging') {
     // @ts-expect-error DEV env
     window.state = state
 }

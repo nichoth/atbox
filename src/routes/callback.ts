@@ -10,7 +10,7 @@ import {
 import { Agent } from '@atproto/api'
 import ky from 'ky'
 import { State } from '../state.js'
-const debug = Debug(import.meta.env.DEV)
+const debug = Debug(import.meta.env?.DEV)
 
 export const CallbackRoute:FunctionComponent<{
     state:ReturnType<typeof State>;
@@ -25,7 +25,7 @@ export const CallbackRoute:FunctionComponent<{
     useEffect(() => {
         (async () => {
             try {
-                const origin = import.meta.env.DEV ?
+                const origin = import.meta.env?.DEV ?
                     'https://amalia-indeclinable-gaye.ngrok-free.dev' :
                     location.origin
                 const clientId = `${origin}/client-metadata.json`

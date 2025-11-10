@@ -5,9 +5,10 @@ import { useSignal } from '@preact/signals'
 import Debug from '@substrate-system/debug'
 import { Button } from '../components/button.js'
 import { State } from '../state.js'
-const debug = Debug(import.meta.env.DEV)
+const debug = Debug(import.meta.env?.DEV)
 
 export const NBSP = '\u00A0'
+export const ELLIPSIS = '\u2026'
 
 export const HomeRoute:FunctionComponent<{
     state:ReturnType<typeof State>
@@ -294,7 +295,12 @@ export const HomeRoute:FunctionComponent<{
             </div>
         </div>
 
-        <div>
+        <footer>
+            <p>
+                This is open source${ELLIPSIS} See${NBSP}
+                <a href=""></a>
+            </p>
+
             <h2>See Also</h2>
             <ul>
                 <li>
@@ -303,6 +309,6 @@ export const HomeRoute:FunctionComponent<{
                     </a>
                 </li>
             </ul>
-        </div>
+        </footer>
     </div>`
 }

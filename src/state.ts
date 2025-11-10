@@ -8,7 +8,7 @@ import {
     type DidDocument
 } from '@atproto/oauth-client-browser'
 import Debug from '@substrate-system/debug'
-const debug = Debug(import.meta.env.DEV)
+const debug = Debug(import.meta.env?.DEV)
 
 /**
  * Setup state
@@ -124,7 +124,7 @@ State.oauthLogin = async function (
     handleOrDid:string,
     pds?:string
 ) {
-    const origin = import.meta.env.DEV ?
+    const origin = import.meta.env?.DEV ?
         'https://amalia-indeclinable-gaye.ngrok-free.dev' :
         location.origin
 
@@ -295,7 +295,7 @@ State.confirmAkaUpdate = async function (
  * Check if there's an active OAuth session and update state
  */
 State.checkSession = async function (state:ReturnType<typeof State>):Promise<void> {
-    const origin = import.meta.env.DEV ?
+    const origin = import.meta.env?.DEV ?
         'https://amalia-indeclinable-gaye.ngrok-free.dev' :
         location.origin
 
@@ -338,7 +338,7 @@ State.logout = async function (state:ReturnType<typeof State>):Promise<void> {
         return
     }
 
-    const origin = import.meta.env.DEV ?
+    const origin = import.meta.env?.DEV ?
         'https://amalia-indeclinable-gaye.ngrok-free.dev' :
         location.origin
 
